@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: ipets-auth-service
+  datasource:
+    url: ${IPETS_DB_URL:jdbc:mysql://mysql:3306/auth_db}
+    username: ${IPETS_DB_USER:auth}
+    password: ${IPETS_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 5
+  flyway:
+    user: ${IPETS_DB_MIGRATOR_USER:auth_migrator}
+    password: ${IPETS_DB_MIGRATOR_PASSWORD:}
+server:
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+ipets:
+  jwt:
+    issuer: ${IPETS_JWT_ISSUER:https://auth.ipets.local}
+    audience: ipets-api
+    private-key: ${IPETS_JWT_PRIVATE_KEY:}
+    access-ttl: 15m
+    refresh-ttl: 30d
+  demo-user:
+    enabled: ${IPETS_DEMO_USER_ENABLED:false}

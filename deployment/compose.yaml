@@ -1,0 +1,119 @@
+name: ipets-local
+x-jwt: &jwt
+  IPETS_JWT_ISSUER: ${IPETS_JWT_ISSUER:-https://auth.ipets.local}
+  IPETS_JWT_JWKS_URI: http://auth-service:8080/.well-known/jwks.json
+  IPETS_INTERNAL_TOKEN: ${IPETS_INTERNAL_TOKEN:?Run python3 setup_local.py first}
+x-db-ready: &db-ready
+  mysql: { condition: service_healthy }
+services:
+  edge:
+    restart: unless-stopped
+    image: nginx:1.28-alpine
+    # Loopback by default. Set IPETS_EDGE_BIND=0.0.0.0 only to test from a phone on a trusted LAN.
+    ports: ["${IPETS_EDGE_BIND:-127.0.0.1}:18080:80"]
+    volumes: ["./nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    depends_on: [auth-service, pet-service, document-service, notification-service]
+  auth-service:
+    restart: unless-stopped
+    image: ${IPETS_AUTH_IMAGE:-ghcr.io/fiddeveloper/ipets-api-service/auth:develop}
+    build: ../ipets-auth-service
+    mem_limit: 768m
+    depends_on: *db-ready
+    environment:
+      IPETS_JWT_ISSUER: ${IPETS_JWT_ISSUER:-https://auth.ipets.local}
+      IPETS_JWT_PRIVATE_KEY: ${IPETS_JWT_PRIVATE_KEY:?Run python3 setup_local.py first}
+      IPETS_DB_PASSWORD: ${MYSQL_AUTH_PASSWORD}
+      IPETS_DB_MIGRATOR_PASSWORD: ${MYSQL_AUTH_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+      IPETS_DEMO_USER_ENABLED: ${IPETS_DEMO_USER_ENABLED:-true}
+  pet-service:
+    restart: unless-stopped
+    image: ${IPETS_PET_IMAGE:-ghcr.io/fiddeveloper/ipets-api-service/pet:develop}
+    build: ../ipets-pet-service
+    mem_limit: 768m
+    depends_on: *db-ready
+    environment:
+      <<: *jwt
+      IPETS_DB_PASSWORD: ${MYSQL_CORE_PASSWORD}
+      IPETS_DB_MIGRATOR_PASSWORD: ${MYSQL_CORE_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+  document-service:
+    restart: unless-stopped
+    image: ${IPETS_DOCUMENT_IMAGE:-ghcr.io/fiddeveloper/ipets-api-service/document:develop}
+    build: ../ipets-document-service
+    mem_limit: 768m
+    depends_on:
+      mysql: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    volumes: ["document-files:/data/files"]
+    environment:
+      <<: *jwt
+      IPETS_DB_PASSWORD: ${MYSQL_DOCUMENT_PASSWORD}
+      IPETS_DB_MIGRATOR_PASSWORD: ${MYSQL_DOCUMENT_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+      IPETS_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  notification-service:
+    restart: unless-stopped
+    image: ${IPETS_NOTIFICATION_IMAGE:-ghcr.io/fiddeveloper/ipets-api-service/notification:develop}
+    build: ../ipets-notification-service
+    mem_limit: 768m
+    depends_on: *db-ready
+    environment:
+      <<: *jwt
+      IPETS_DB_PASSWORD: ${MYSQL_NOTIFICATION_PASSWORD}
+      IPETS_DB_MIGRATOR_PASSWORD: ${MYSQL_NOTIFICATION_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+  ocr-worker:
+    restart: unless-stopped
+    image: ${IPETS_OCR_IMAGE:-ghcr.io/fiddeveloper/ipets-ocr-worker:develop}
+    build: ../../ipets-ocr-worker
+    mem_limit: 3g
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      document-service: { condition: service_started }
+    environment:
+      IPETS_INTERNAL_TOKEN: ${IPETS_INTERNAL_TOKEN}
+      IPETS_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      IPETS_DOCUMENT_SERVICE_URL: http://document-service:8080
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run python3 setup_local.py first}
+      MYSQL_AUTH_PASSWORD: ${MYSQL_AUTH_PASSWORD:?Missing auth database password}
+      MYSQL_CORE_PASSWORD: ${MYSQL_CORE_PASSWORD:?Missing core database password}
+      MYSQL_DOCUMENT_PASSWORD: ${MYSQL_DOCUMENT_PASSWORD:?Missing document database password}
+      MYSQL_NOTIFICATION_PASSWORD: ${MYSQL_NOTIFICATION_PASSWORD:?Missing notification database password}
+      MYSQL_AUTH_MIGRATOR_PASSWORD: ${MYSQL_AUTH_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+      MYSQL_CORE_MIGRATOR_PASSWORD: ${MYSQL_CORE_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+      MYSQL_DOCUMENT_MIGRATOR_PASSWORD: ${MYSQL_DOCUMENT_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+      MYSQL_NOTIFICATION_MIGRATOR_PASSWORD: ${MYSQL_NOTIFICATION_MIGRATOR_PASSWORD:?Run python3 setup_local.py first}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  rabbitmq:
+    image: rabbitmq:4.3.4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ipets
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Missing broker password}
+    volumes: ["rabbitmq-data:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+  object-storage:
+    profiles: [ingestion]
+    image: chrislusf/seaweedfs:3.97
+    command: server -s3 -dir=/data
+    volumes: ["objects:/data"]
+  malware-scanner:
+    profiles: [ingestion]
+    image: clamav/clamav:1.4
+    volumes: ["clamav-signatures:/var/lib/clamav"]
+volumes:
+  mysql-data:
+  rabbitmq-data:
+  document-files:
+  objects:
+  clamav-signatures:

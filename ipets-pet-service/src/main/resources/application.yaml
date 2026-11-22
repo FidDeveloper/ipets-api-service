@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: ipets-pet-service
+  datasource:
+    url: ${IPETS_DB_URL:jdbc:mysql://mysql:3306/core_db?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true}
+    username: ${IPETS_DB_USER:pet}
+    password: ${IPETS_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 8
+  flyway:
+    user: ${IPETS_DB_MIGRATOR_USER:pet_migrator}
+    password: ${IPETS_DB_MIGRATOR_PASSWORD:}
+server:
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+ipets:
+  jwt:
+    issuer: ${IPETS_JWT_ISSUER:https://localhost.invalid}
+    audience: ipets-api
+    jwks-uri: ${IPETS_JWT_JWKS_URI:}
+  internal-token: ${IPETS_INTERNAL_TOKEN:}

@@ -1,0 +1,53 @@
+CREATE TABLE profiles (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  name VARCHAR(100) NOT NULL, phone VARCHAR(30) NOT NULL DEFAULT '', notifications BOOLEAN NOT NULL DEFAULT TRUE,
+  marketing BOOLEAN NOT NULL DEFAULT FALSE, language VARCHAR(2) NOT NULL DEFAULT 'en',
+  INDEX ix_profiles_owner (owner_id, updated_at)
+);
+CREATE TABLE pets (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  name VARCHAR(200) NOT NULL, species VARCHAR(20) NOT NULL, breed VARCHAR(200) NOT NULL, sex VARCHAR(10) NOT NULL,
+  birthday DATE NOT NULL, weight DECIMAL(7,2) NOT NULL, color VARCHAR(100) NOT NULL DEFAULT '', microchip VARCHAR(100) NOT NULL DEFAULT '',
+  sterilized BOOLEAN NOT NULL DEFAULT FALSE, photo_file_id VARCHAR(36) NULL,
+  INDEX ix_pets_owner (owner_id, updated_at)
+);
+CREATE TABLE medical_records (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, pet_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  title VARCHAR(200) NOT NULL, kind VARCHAR(20) NOT NULL, event_date DATE NOT NULL, clinic VARCHAR(200) NOT NULL,
+  notes TEXT NULL, due_date DATE NULL, source VARCHAR(10) NOT NULL, document_id VARCHAR(36) NULL,
+  INDEX ix_records_owner (owner_id, updated_at), INDEX ix_records_pet (pet_id, event_date)
+);
+CREATE TABLE feeds (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, pet_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  food VARCHAR(200) NOT NULL, grams DECIMAL(8,2) NOT NULL, feed_date DATE NOT NULL, notes TEXT NULL,
+  INDEX ix_feeds_owner (owner_id, updated_at)
+);
+CREATE TABLE journals (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, pet_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  title VARCHAR(200) NOT NULL, body TEXT NULL, entry_date DATE NOT NULL,
+  INDEX ix_journals_owner (owner_id, updated_at)
+);
+CREATE TABLE memories (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, pet_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  caption VARCHAR(200) NOT NULL, file_id VARCHAR(36) NOT NULL, memory_date DATE NOT NULL,
+  INDEX ix_memories_owner (owner_id, updated_at)
+);
+CREATE TABLE bookings (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, pet_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  provider VARCHAR(200) NOT NULL, service VARCHAR(200) NOT NULL, booking_date DATE NOT NULL, booking_time VARCHAR(20) NOT NULL,
+  notes TEXT NULL, status VARCHAR(12) NOT NULL,
+  INDEX ix_bookings_owner (owner_id, updated_at)
+);
+CREATE TABLE redemptions (
+  id CHAR(36) NOT NULL PRIMARY KEY, owner_id CHAR(36) NOT NULL, version BIGINT NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3), deleted_at TIMESTAMP(3) NULL,
+  title VARCHAR(200) NOT NULL, cost INT NOT NULL,
+  INDEX ix_redemptions_owner (owner_id, updated_at)
+);

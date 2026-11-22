@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+target/
+node_modules/
+.expo/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store

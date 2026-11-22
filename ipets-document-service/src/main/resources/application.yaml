@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: ipets-document-service
+  datasource:
+    url: ${IPETS_DB_URL:jdbc:mysql://mysql:3306/document_db?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true}
+    username: ${IPETS_DB_USER:document}
+    password: ${IPETS_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 8
+  flyway:
+    user: ${IPETS_DB_MIGRATOR_USER:document_migrator}
+    password: ${IPETS_DB_MIGRATOR_PASSWORD:}
+  rabbitmq:
+    host: ${IPETS_RABBITMQ_HOST:rabbitmq}
+    username: ${IPETS_RABBITMQ_USER:ipets}
+    password: ${IPETS_RABBITMQ_PASSWORD:}
+server:
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+  tomcat:
+    max-swallow-size: 21MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    rabbit:
+      enabled: false
+ipets:
+  jwt:
+    issuer: ${IPETS_JWT_ISSUER:https://localhost.invalid}
+    audience: ipets-api
+    jwks-uri: ${IPETS_JWT_JWKS_URI:}
+  internal-token: ${IPETS_INTERNAL_TOKEN:}
+  pet-service-url: ${IPETS_PET_SERVICE_URL:http://pet-service:8080}
+  file-root: ${IPETS_FILE_ROOT:/data/files}
+  ocr-queue: ipets.ocr.jobs

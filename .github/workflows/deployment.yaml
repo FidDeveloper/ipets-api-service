@@ -1,0 +1,21 @@
+name: Deployment configuration
+on:
+  push:
+    branches: [develop, main]
+    paths: ['deployment/**', '.github/workflows/deployment.yaml']
+  pull_request:
+    paths: ['deployment/**', '.github/workflows/deployment.yaml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deployment
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest test_setup -v
+      - run: python3 setup_local.py
+      - run: docker compose config --quiet
+      - run: bash -n mysql-init.sh
