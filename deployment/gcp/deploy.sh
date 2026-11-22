@@ -15,7 +15,7 @@ case "$service" in
   *) echo 'Unknown service'; exit 2 ;;
 esac
 if [[ $service != stack ]]; then
-  [[ $image =~ ^ghcr.io/fiddeveloper/$repository:[a-f0-9]{40}$ ]] || { echo 'Expected a matching immutable Git SHA image'; exit 2; }
+  [[ $image =~ ^ghcr[.]io/fiddeveloper/$repository:[a-f0-9]{40}$ ]] || { echo 'Expected a matching immutable Git SHA image'; exit 2; }
 fi
 if [[ -n ${3:-} ]]; then
   # The bundle contains deployment code only; secrets and data never travel in CI.
@@ -23,8 +23,9 @@ if [[ -n ${3:-} ]]; then
 fi
 cp images.env images.env.previous
 if [[ -n $key ]]; then
-  sed -i "/^${key}=/d" images.env
-  printf '%s=%s\n' "$key" "$image" >> images.env
+  sed "/^${key}=/d" images.env > images.env.next
+  printf '%s=%s\n' "$key" "$image" >> images.env.next
+  mv images.env.next images.env
 fi
 compose=(docker compose -p ipets-develop --env-file .env --env-file images.env -f compose.yaml -f gcp/compose.yaml)
 rollback() {

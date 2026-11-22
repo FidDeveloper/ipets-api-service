@@ -52,7 +52,7 @@ def main():
     number = run('projects', 'describe', PROJECT, '--format=value(projectNumber)', capture=True)
     run('services', 'enable', 'compute.googleapis.com', 'iap.googleapis.com', 'iam.googleapis.com',
         'iamcredentials.googleapis.com', 'sts.googleapis.com', 'run.googleapis.com',
-        'artifactregistry.googleapis.com', 'cloudbuild.googleapis.com', 'billingbudgets.googleapis.com')
+        'artifactregistry.googleapis.com', 'billingbudgets.googleapis.com')
     billing_account = billing['billingAccountName']
     budgets = json.loads(run('billing', 'budgets', 'list', '--billing-account=' + billing_account,
                              '--filter=displayName=ipets-develop-monthly', '--format=json', capture=True))

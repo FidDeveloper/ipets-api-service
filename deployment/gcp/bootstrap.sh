@@ -27,7 +27,7 @@ cat > /etc/systemd/system/ipets-autostop.timer <<'UNIT'
 [Unit]
 Description=Four-hour development VM spending guard
 [Timer]
-OnBootSec=4h
+OnActiveSec=4h
 Unit=ipets-autostop.service
 [Install]
 WantedBy=timers.target
