@@ -1,0 +1,58 @@
+name: Deploy a development service to GCP
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+      image:
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  deploy:
+    if: vars.GCP_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: gcp-${{ inputs.service }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: FidDeveloper/ipets-api-service
+          ref: develop
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Keep on-demand VM stopped when nobody is testing
+        id: vm
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          ZONE: ${{ vars.GCP_ZONE }}
+          INSTANCE: ${{ vars.GCP_INSTANCE }}
+        run: |
+          status=$(gcloud compute instances describe "$INSTANCE" --project="$PROJECT" --zone="$ZONE" --format='value(status)')
+          if [[ "$status" == RUNNING ]]; then
+            echo 'running=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Image published; deployment deferred because the testing VM is stopped. Start it and run Deployment configuration on develop to deploy the latest builds.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Transfer configuration and deploy through IAP
+        if: steps.vm.outputs.running == 'true'
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          ZONE: ${{ vars.GCP_ZONE }}
+          INSTANCE: ${{ vars.GCP_INSTANCE }}
+          SERVICE: ${{ inputs.service }}
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          bundle="ipets-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tgz"
+          tar -czf "$bundle" -C deployment --exclude=.env --exclude='.env.*' --exclude=images.env --exclude=images.env.previous --exclude=__pycache__ .
+          gcloud compute scp "$bundle" "$INSTANCE:/tmp/$bundle" --project="$PROJECT" --zone="$ZONE" --tunnel-through-iap --quiet
+          gcloud compute ssh "$INSTANCE" --project="$PROJECT" --zone="$ZONE" --tunnel-through-iap --quiet --command="sudo bash /opt/ipets/deployment/gcp/deploy.sh '$SERVICE' '$IMAGE' '/tmp/$bundle'; result=\$?; rm -f '/tmp/$bundle'; exit \$result"

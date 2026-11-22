@@ -1,10 +1,11 @@
 name: Deployment configuration
 on:
+  workflow_dispatch:
   push:
     branches: [develop, main]
-    paths: ['deployment/**', '.github/workflows/deployment.yaml']
+    paths: ['deployment/**', '.github/workflows/deployment.yaml', '.github/workflows/gcp-deploy.yaml']
   pull_request:
-    paths: ['deployment/**', '.github/workflows/deployment.yaml']
+    paths: ['deployment/**', '.github/workflows/deployment.yaml', '.github/workflows/gcp-deploy.yaml']
 permissions:
   contents: read
 jobs:
@@ -15,7 +16,16 @@ jobs:
         working-directory: deployment
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m unittest test_setup -v
+      - run: python3 -m unittest test_setup gcp.test_config -v
       - run: python3 setup_local.py
       - run: docker compose config --quiet
-      - run: bash -n mysql-init.sh
+      - run: bash -n mysql-init.sh gcp/bootstrap.sh gcp/deploy.sh
+  deploy:
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/develop'
+    needs: verify
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/gcp-deploy.yaml
+    with:
+      service: stack

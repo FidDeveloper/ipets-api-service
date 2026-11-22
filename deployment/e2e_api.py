@@ -89,6 +89,9 @@ class Api(unittest.TestCase):
         call("POST", "/auth/api/v1/refresh", {"refreshToken": again["refreshToken"]}, expect=401)
 
     def test_demo_user_can_log_in(self):
+        if os.environ.get('IPETS_E2E_DEMO_ENABLED', 'true') != 'true':
+            call("POST", "/auth/api/v1/login", {"email": "demo@ipets.app", "password": "PetCare123!"}, expect=401)
+            return
         _, demo = call("POST", "/auth/api/v1/login", {"email": "demo@ipets.app", "password": "PetCare123!"}, expect=200)
         self.assertEqual(demo["user"]["name"], "Alex Tan")
         call("POST", "/auth/api/v1/logout", {"refreshToken": demo["refreshToken"]}, expect=204)
