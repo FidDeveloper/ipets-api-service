@@ -11,4 +11,4 @@ Four independently built/deployed Java 21 / Spring Boot services in the shared r
 
 Each service has its own path-filtered CI workflow and image; changing one service does not rebuild the others. Pushes to develop/main verify and publish commit-tagged and branch-tagged images for AMD64 and ARM64. This repository grouping does not merge the running services or databases.
 
-See [deployment/DEVELOP_SERVER.md](deployment/DEVELOP_SERVER.md) for the development-server checklist. No host credentials or real medical records are committed. The previous sibling service folders in the local workspace are preserved as migration references; this shared repository is the publishing source now.
+See [deployment/DEVELOP_SERVER.md](deployment/DEVELOP_SERVER.md) for the development-server checklist. No host credentials or real medical records are committed. The former duplicate service checkouts are archived under the workspace root `legacy/`; this shared repository is the only active Java/API publishing source.

@@ -18,7 +18,12 @@ import uuid
 from pathlib import Path
 
 BASE = os.environ.get("IPETS_E2E_BASE", "http://127.0.0.1:18080")
-REFERENCE = Path(__file__).resolve().parent.parent / "Reference"
+_reference_candidates = [
+    Path(os.environ["IPETS_REFERENCE_DIR"]) if os.environ.get("IPETS_REFERENCE_DIR") else None,
+    Path(__file__).resolve().parent.parent / "Reference",
+    Path(__file__).resolve().parents[2] / "Reference",
+]
+REFERENCE = next((path for path in _reference_candidates if path and path.is_dir()), _reference_candidates[1])
 CARD = REFERENCE / "Sample-card3.jpeg"
 PRINTED_CARD = REFERENCE / "Upload-file-3.jpeg"
 PASSWORD = "Sync-test-2026"
