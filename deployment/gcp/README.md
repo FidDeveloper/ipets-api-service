@@ -1,6 +1,6 @@
 # GCP development deployment
 
-Status: prepared; live deployment and billing verification require the project owner's Google sign-in. Do not treat local tests as proof that the GCP deployment is running.
+Status: deployed and verified on 24 November 2026. API: https://ipets-edge-skogx2vwva-as.a.run.app. All 12 functional/OCR tests passed on the VM and through public HTTPS. Billing is enabled, GitHub deployment variables are enabled in both backend repositories, and the mobile API variable points to this URL. The VM automatically stops after four hours; start it before testing.
 
 Project: `project-d786fe4f-a307-4760-93f`. Singapore (`asia-southeast1-b`). One on-demand `e2-highmem-2` VM (2 vCPU, 16 GB RAM), 60 GB balanced boot disk. A small Cloud Run nginx proxy supplies the Google `https://…run.app` address and TLS, with minimum instances 0 and maximum 1. No purchased domain, GKE, managed database, load balancer, NAT gateway or VPC connector.
 

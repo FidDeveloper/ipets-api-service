@@ -16,7 +16,7 @@ jobs:
         working-directory: deployment
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m unittest test_setup gcp.test_config gcp.test_deploy -v
+      - run: python3 -m unittest test_setup test_smoke gcp.test_config gcp.test_deploy -v
       - run: python3 setup_local.py
       - run: docker compose config --quiet
       - run: bash -n mysql-init.sh gcp/bootstrap.sh gcp/deploy.sh

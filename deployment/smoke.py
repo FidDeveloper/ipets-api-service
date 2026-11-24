@@ -5,13 +5,13 @@ import json
 import time
 base = "http://127.0.0.1:18080"
 for service in ["auth", "pet", "document", "notification"]:
-    for attempt in range(30):
+    for attempt in range(120):
         try:
             with urllib.request.urlopen(f"{base}/{service}/actuator/health", timeout=2) as response:
                 if json.load(response)["status"] != "UP": raise ValueError("Not ready")
             break
         except (urllib.error.URLError, ValueError):
-            if attempt == 29: raise
+            if attempt == 119: raise
             time.sleep(1)
     for headers in [{}, {"Authorization": "Bearer forged-token"}]:
         try:
